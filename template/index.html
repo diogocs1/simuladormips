@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	    <meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <meta name="description" content="">
+	    <meta name="author" content="">
+	
+	    <title>Simulador MIPS</title>
+	
+	    <!-- Bootstrap Core CSS -->
+	    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+	
+	    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	    <!--[if lt IE 9]>
+		<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+		<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+	    <![endif]-->
+	    <link href="/static/css/simulador.css" rel="stylesheet">
+	</head>
+	<body>
+		<header>
+			<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+				<div class="container-fluid">
+					<div class="navbar-header">
+						<a class="navbar-brand"> Simulador MIPS </a>
+					</div>
+					<div class="collapse navbar-collapse">
+						% if simulando:
+							<p class="navbar-text navbar-right">Próxima Instrução: {{proxima_instrucao}}</p>
+							<form method="post" class="navbar-form navbar-right">
+								% if proxima_instrucao != "Fim do programa!":
+									<input id="passo" class="btn btn-primary" type="submit" value="Próximo ciclo" name="passo"/>
+								%end
+							</form>
+							<form method="get" action="/reinicia/" class="navbar-form navbar-right">
+								<a href="/reinicia/zera"> <button id="reinicia" class="btn btn-default" >Zerar</button> </a>
+							</form>
+						% end
+					</div>
+				</div>
+			</nav>
+		</header>
+		<div class="conteudo container">
+			<h3>Digite ou cole instruções Assembly / MIPS</h3>
+			<div class="codigo">
+				<form method="post">
+	    			% if not simulando:
+	    				<textarea id="meu_codigo" name="cod"></textarea>
+						<input id="simular"  class="btn btn-primary enviar" type="submit" value="Simular" name="simular"/>
+					% end
+					% if codigo and simulando:
+						<textarea id="codigo-compilado" disabled="disabled"" name="cod-final">{{codigo}}</textarea>
+					% end
+				</form>
+			</div>
+			% if simulando:
+			<div id="uc">
+				<h3>Estado da Unidade de Controle</h3>
+				<table class="table">
+					<thead>
+						<tr>
+							<td>RegDst</td>
+							<td>Branch</td>
+							<td>MemRead</td>
+							<td>MemToReg</td>
+							<td>ALU-Op</td>
+							<td>MemWrite</td>
+							<td>ALU-Src</td>
+							<td>RegWrite</td>
+						</tr>
+					</thead>
+					% if UC:
+					<tbody>
+						<tr>
+							<td>{{UC.getRegDestino()}}</td>
+							<td>{{UC.getDesvioCondicional()}}</td>
+							<td>{{UC.getLerDados()}}</td>
+							<td>{{UC.getMemToReg()}}</td>
+							<td>{{UC.getALUOp()}}</td>
+							<td>{{UC.getEscreveDados()}}</td>
+							<td>{{UC.getALUFonte()}}</td>
+							<td>{{UC.getEscreveReg()}}</td>
+						</tr>
+					</tbody>
+					% end
+				</table>
+			</div>
+			<div id="registradores" class="resultados">
+				<h3>Estados dos registradores</h3>
+				<table class="table">
+					<thead>
+						<tr>
+							<td>Registrador</td>
+							<td>Valor</td>
+						</tr>
+					</thead>
+					<tbody>
+						% for registrador in registradores:
+						<tr>
+							<td>{{registrador.getNome()}}</td>
+							<td>{{registrador.getValor()}}</td>
+						</tr>
+						% end
+					</tbody>
+				</table>
+			</div>
+			<div id="memoria" class="resultados">
+				<h3>Estado da memória</h3>
+				<a href="/decimal"> <button id="decimal" class="btn btn-default" >Decimal</button> </a>
+				<a href="/hexadecimal"> <button id="hexadecimal" class="btn btn-default" >Hexadecimal</button> </a>
+				<table class="table">
+					<thead>
+						<tr>
+							<td>Variável</td>
+							<td>Valor</td>
+							<td>Endereço na memória</td>
+						</tr>
+					</thead>
+					<tbody>
+						% if variaveis:
+							% for variavel in variaveis:
+								% if decimal:
+									<tr>
+										<td>{{variavel.getNome()}}</td>
+										<td>{{variavel.getValor()}}</td>
+										<td>{{variavel.getEndereco()}}</td>
+									</tr>
+								% else:
+									<tr>
+										<td>{{variavel.getNome()}}</td>
+										<td>{{variavel.getValor()}}</td>
+										<td>{{hex( variavel.getEndereco() )}}</td>
+									</tr>
+								% end
+							% end
+						% end
+					</tbody>
+				</table>
+			</div>
+			<div id="ULA" class="resultados">
+				<h3>Estado da Unidade Lógica e Aritmética</h3>
+				<table class="table">
+					<thead>
+						<tr>
+							<td>Operação</td>
+							<td>Valor 1</td>
+							<td>Valor 2</td>
+							<td>Resultado</td>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>{{ULA.getOperacao()}}</td>
+							<td>{{ULA.getValor1()}}</td>
+							<td>{{ULA.getValor2()}}</td>
+							<td>{{ULA.getResultado()}}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			% end
+		</div>
+		<!-- Bootstrap Core JavaScript -->
+		<script src="/static/js/bootstrap.min.js"></script>
+		<script src="/static/js/jquery-2.1.1.min.js"></script>
+		<script src="/static/js/bootstrap.js"></script>
+	</body>
+</html>
